@@ -176,23 +176,25 @@ BranchSwitch() {
 # Creates a new branch from trunk
 BranchCreate() {
     if [ -n "$1" ]; then
-        local trunk=`getTrunkUrl`
-        local branch=`getDevelopmentBranch "$1"`
-        local branchinfo=`svn info $branch 2>/dev/null`
-
-        if [ -z "$branchinfo" ]; then
-            svn cp $trunk $branch -m "${SCRIPT_NAME}: creating development branch (${1})" 2>&1
-            local localstate=`svn st 2>/dev/null`
-            if [ -z "$localstate" ]; then
-                 svn switch --non-interactive $branch
+        local localstate=`svn st 2>/dev/null`
+        if [ -z "$localstate" ]; then
+            local trunk=`getTrunkUrl`
+            local branch=`getDevelopmentBranch "$1"`
+            local branchinfo=`svn info $branch 2>/dev/null`
+            if [ -z "$branchinfo" ]; then
+                svn cp $trunk $branch -m "${SCRIPT_NAME}: creating development branch (${1})" 2>&1
+                svn switch --non-interactive $branch
                 local switchinfo=`svn info 2>/dev/null`
                 echo -e "\n$switchinfo"
             else
-                __cli_warn "You must commit all pending changes before you can switch to the new branch." "  "
-                echo -e "\n$localstate"
+                __cli_warn "exists already; switching to it instead." "  ${WH}$branch${NC}: "
+                svn switch --non-interactive $branch
+                local switchinfo=`svn info 2>/dev/null`
+                echo -e "\n$switchinfo"
             fi
         else
-            __cli_error "already exists!" "  ${WH}$branch${NC}: "
+            __cli_warn "You must commit all pending changes before you can switch to the new branch." "  "
+            echo -e "\n$localstate"
         fi
         echo ""
     else
