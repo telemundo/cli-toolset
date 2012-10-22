@@ -202,27 +202,6 @@ BranchCreate() {
     fi
 }
 
-# Updates your branch with the latest changes from trunk
-BranchUpdate() {
-    local localinfo=`svn info 2>/dev/null`
-
-    if [ ! -z "$localinfo" ]; then
-        local localstate=`svn st 2>/dev/null`
-        if [ -z "$localstate" ]; then
-            local trunk=`getTrunkUrl`
-            svn up 2>/dev/null
-            echo ""
-            svn merge --non-interactive -x -b -x -w -x --ignore-eol-style $trunk .
-        else
-            __cli_warn "You must commit all pending changes before you can update your branch." "  "
-            echo -e "\n$localstate"
-        fi
-    else
-        __cli_error "is not a working copy!" "  ${WH}${SCRIPT_PATH}${NC}: "
-    fi
-    echo ""
-}
-
 # Prints the information of a branch
 BranchInfo() {
     if [ -n "$1" ]; then
@@ -240,8 +219,34 @@ BranchInfo() {
     fi
 }
 
+# Updates your branch with the latest changes from trunk
+BranchPull() {
+    local localinfo=`svn info 2>/dev/null`
+
+    if [ ! -z "$localinfo" ]; then
+        local localstate=`svn st 2>/dev/null`
+        if [ -z "$localstate" ]; then
+            local trunk=`getTrunkUrl`
+            local branch=$(svn info 2>/dev/null | grep ^URL | cut -d" " -f2)
+            if [[ "$branch" == "$trunk" ]]; then
+                __cli_error "You cannot update trunk from itself dummy." "  "
+            else
+                svn up 2>/dev/null
+                echo ""
+                svn merge --non-interactive -x -b -x -w -x --ignore-eol-style $trunk .
+            fi
+        else
+            __cli_warn "You must commit all pending changes before you can update your branch." "  "
+            echo -e "\n$localstate"
+        fi
+    else
+        __cli_error "is not a working copy!" "  ${WH}${SCRIPT_PATH}${NC}: "
+    fi
+    echo ""
+}
+
 # Reintegrates your working copy into the trunk
-BranchReintegrate() {
+BranchPush() {
     local localinfo=`svn info . 2>/dev/null`
 
     if [ ! -z "$localinfo" ]; then
@@ -311,9 +316,9 @@ scriptUsage() {
     echo "  ${SCRIPT_NAME} ${WH}list${NC} [${GY}user${NC}]                     (outputs a list of development branches)"
     echo "  ${SCRIPT_NAME} ${WH}switch${NC} (${RD}branch${NC})                 (switches your working copy to the specified branch)"
     echo "  ${SCRIPT_NAME} ${WH}create${NC} (${RD}branch${NC})                 (creates a new branch based off trunk)"
-    echo "  ${SCRIPT_NAME} ${WH}update${NC}                          (updates your branch with the latest changes from trunk)"
-    echo "  ${SCRIPT_NAME} ${WH}reintegrate${NC}                     (reintegrates your branch into trunk)"
     echo "  ${SCRIPT_NAME} ${WH}info${NC} (${RD}branch${NC})                   (prints the branch information)"
+    echo "  ${SCRIPT_NAME} ${WH}pull${NC}                            (updates your branch with the latest changes from trunk)"
+    echo "  ${SCRIPT_NAME} ${WH}push${NC}                            (reintegrates your branch into trunk)"
     echo "  ${SCRIPT_NAME} ${WH}purge${NC}                           (removes all unversioned files from your working copy)"
     echo "  ${SCRIPT_NAME} ${WH}add${NC}                             (adds all unversioned files to your working copy)"
     echo "  ${SCRIPT_NAME} ${WH}exit${NC}                            (switches your working copy into trunk)"
@@ -331,9 +336,9 @@ if [ -n "$1" ]; then
         "ls" | "list"   ) BranchList $*;;
         "sw" | "switch" ) BranchSwitch $*;;
         "cp" | "create" ) BranchCreate $*;;
-        "up" | "update" ) BranchUpdate $*;;
-        "reintegrate"   ) BranchReintegrate $*;;
         "info"          ) BranchInfo $*;;
+        "pull"          ) BranchPull $*;;
+        "push"          ) BranchPush $*;;
         "purge"         ) BranchPurge $*;;
         "add"           ) BranchAdd $*;;
         "exit"          ) BranchExit $*;;
