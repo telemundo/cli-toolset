@@ -12,4 +12,4 @@ Rodolfo Puig - <rodolfo.puig@nbcuni.com> - [@rpuig_nbcuni](https://twitter.com/r
 
 ## License
 
-CLI Toolset is licensed under the MIT License - see the LICENSE file for details
+This package is licensed under the MIT License - see the LICENSE file for details.
