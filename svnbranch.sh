@@ -173,7 +173,7 @@ BranchSwitch() {
     fi
 }
 
-# Creates a new branch from trunk
+# Creates a new development branch from trunk
 BranchCreate() {
     if [ -n "$1" ]; then
         local localstate=`svn st 2>/dev/null`
@@ -201,6 +201,23 @@ BranchCreate() {
         scriptUsage
     fi
 }
+
+# Deletes the specified development branch
+BranchDelete() {
+    if [ -n "$1" ]; then
+        local branch=`getDevelopmentBranch "$1"`
+        local branchinfo=`svn info $branch 2>/dev/null`
+        if [ ! -z "$branchinfo" ]; then
+            svn rm $branch -m "${SCRIPT_NAME}: deleting development branch (${1})" 2>&1
+        else
+            __cli_warn "does not exist." "  ${WH}$branch${NC}: "
+        fi
+        echo ""
+    else
+        scriptUsage
+    fi
+}
+
 
 # Prints the information of a branch
 BranchInfo() {
@@ -313,12 +330,13 @@ scriptChecks() {
 scriptUsage() {
     echo "usage:"
     echo ""
-    echo "  ${SCRIPT_NAME} ${WH}list${NC} [${GY}user${NC}]                     (outputs a list of development branches)"
+    echo "  ${SCRIPT_NAME} ${WH}list${NC} [${GY}user${NC}]                     (outputs a list of available branches)"
     echo "  ${SCRIPT_NAME} ${WH}switch${NC} (${RD}branch${NC})                 (switches your working copy to the specified branch)"
-    echo "  ${SCRIPT_NAME} ${WH}create${NC} (${RD}branch${NC})                 (creates a new branch based off trunk)"
+    echo "  ${SCRIPT_NAME} ${WH}create${NC} (${RD}branch${NC})                 (creates a new development branch based off trunk)"
+    echo "  ${SCRIPT_NAME} ${WH}delete${NC} (${RD}branch${NC})                 (deletes the specified development branch)"
     echo "  ${SCRIPT_NAME} ${WH}info${NC} (${RD}branch${NC})                   (prints the branch information)"
-    echo "  ${SCRIPT_NAME} ${WH}pull${NC}                            (updates your branch with the latest changes from trunk)"
-    echo "  ${SCRIPT_NAME} ${WH}push${NC}                            (reintegrates your branch into trunk)"
+    echo "  ${SCRIPT_NAME} ${WH}pull${NC}                            (updates your working copy with the latest changes from trunk)"
+    echo "  ${SCRIPT_NAME} ${WH}push${NC}                            (reintegrates your working copy into trunk)"
     echo "  ${SCRIPT_NAME} ${WH}purge${NC}                           (removes all unversioned files from your working copy)"
     echo "  ${SCRIPT_NAME} ${WH}add${NC}                             (adds all unversioned files to your working copy)"
     echo "  ${SCRIPT_NAME} ${WH}exit${NC}                            (switches your working copy into trunk)"
@@ -336,6 +354,7 @@ if [ -n "$1" ]; then
         "ls" | "list"   ) BranchList $*;;
         "sw" | "switch" ) BranchSwitch $*;;
         "cp" | "create" ) BranchCreate $*;;
+        "rm" | "delete" ) BranchDelete $*;;
         "info"          ) BranchInfo $*;;
         "pull"          ) BranchPull $*;;
         "push"          ) BranchPush $*;;
